@@ -17,6 +17,7 @@ Route::view('/admin', 'admin')->middleware(['auth', 'admin'])->name('admin');
 Route::get('/admin/bookings', [AdminBookingController::class, 'index'])->middleware(['auth', 'admin'])->name('admin.bookings');
 Route::delete('/admin/users/{user}/bookings/{booking}', [AdminBookingController::class, 'destroy'])->middleware(['auth', 'admin'])->name('admin.bookings.destroy');
 Route::get('/book/list', [BookingController::class, 'index'])->middleware('auth')->name('bookings.index');
+Route::get('/book/new', [BookingController::class, 'create'])->middleware('auth')->name('bookings.create');
 Route::view('/book/playground', 'bookings.playground')->middleware('auth')->name('bookings.playground');
 Route::post('/book/playground/add', [BookingPlaygroundController::class, 'store'])->middleware('auth')->name('bookings.playground.add');
 Route::post('/book/playground/clear', [BookingPlaygroundController::class, 'destroy'])->middleware('auth')->name('bookings.playground.clear');

@@ -3,6 +3,7 @@
 @section('title', 'My bookings')
 
 @section('content')
+    <p><a href="{{ route('bookings.create') }}">New booking</a></p>
     <a href="/book/playground">Booking playground (for testing)</a>
 
     @if ($bookings->isEmpty())
