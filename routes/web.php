@@ -12,6 +12,7 @@ Route::view('/login', 'login')->middleware('guest')->name('login');
 Route::post('/login', [LoginController::class, 'store'])
     ->middleware(['guest', 'throttle:5,1'])->name('login.store');
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
+Route::view('/admin', 'admin')->middleware(['auth', 'admin'])->name('admin');
 Route::get('/book/list', [BookingController::class, 'index'])->middleware('auth')->name('bookings.index');
 Route::view('/book/playground', 'bookings.playground')->middleware('auth')->name('bookings.playground');
 Route::post('/book/playground/add', [BookingPlaygroundController::class, 'store'])->middleware('auth')->name('bookings.playground.add');
