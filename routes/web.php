@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminBookingController;
+use App\Http\Controllers\AdminScheduleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingPlaygroundController;
 use App\Http\Controllers\HomeController;
@@ -16,6 +17,8 @@ Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name(
 Route::view('/admin', 'admin')->middleware(['auth', 'admin'])->name('admin');
 Route::get('/admin/bookings', [AdminBookingController::class, 'index'])->middleware(['auth', 'admin'])->name('admin.bookings');
 Route::delete('/admin/users/{user}/bookings/{booking}', [AdminBookingController::class, 'destroy'])->middleware(['auth', 'admin'])->name('admin.bookings.destroy');
+Route::get('/admin/schedule', [AdminScheduleController::class, 'index'])->middleware(['auth', 'admin'])->name('admin.schedule');
+Route::patch('/admin/schedule/{clinicSchedule}', [AdminScheduleController::class, 'update'])->middleware(['auth', 'admin'])->name('admin.schedule.update');
 Route::get('/book/list', [BookingController::class, 'index'])->middleware('auth')->name('bookings.index');
 Route::get('/book/new', [BookingController::class, 'create'])->middleware('auth')->name('bookings.create');
 Route::post('/book/new', [BookingController::class, 'store'])->middleware('auth')->name('bookings.store');
