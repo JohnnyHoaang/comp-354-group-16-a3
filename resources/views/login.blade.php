@@ -1,26 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
-</head>
-<body>
-    <h1>Login</h1>
+@extends('layout')
+
+@section('title', 'Login')
+
+@section('content')
     @if ($errors->any())
-        <p role="alert">{{ $errors->first() }}</p>
+        <p class="error" role="alert">{{ $errors->first() }}</p>
     @endif
     <form method="POST" action="{{ route('login.store') }}">
         @csrf
-        <p>
-            <label for="email">Email</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" autocomplete="username" required>
-        </p>
-        <p>
-            <label for="password">Password</label>
-            <input id="password" type="password" name="password" autocomplete="current-password" required>
-        </p>
-        <button type="submit">Log in</button>
+        <wa-input type="email" name="email" label="Email" value="{{ old('email') }}" autocomplete="username" required></wa-input>
+        <wa-input type="password" name="password" label="Password" autocomplete="current-password" required></wa-input>
+        <wa-button type="submit" variant="brand">Log in</wa-button>
     </form>
-</body>
-</html>
+@endsection

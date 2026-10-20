@@ -3,9 +3,7 @@
 use App\Http\Controllers\LoginController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/home');
 
 Route::view('/login', 'login')->middleware('guest')->name('login');
 Route::post('/login', [LoginController::class, 'store'])

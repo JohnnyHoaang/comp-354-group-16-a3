@@ -1,16 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Home</title>
-</head>
-<body>
+@extends('layout')
+
+@section('title', 'Home')
+
+@section('content')
     <p>Email: {{ auth()->user()->email }}</p>
     <p>Role: {{ auth()->user()->role }}</p>
     <form method="POST" action="{{ route('logout') }}">
         @csrf
-        <button type="submit">Log out</button>
+        <wa-button type="submit" variant="neutral" appearance="outlined">Log out</wa-button>
     </form>
-</body>
-</html>
+@endsection
