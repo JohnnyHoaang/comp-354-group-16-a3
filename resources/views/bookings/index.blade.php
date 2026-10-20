@@ -3,18 +3,31 @@
 @section('title', 'My bookings')
 
 @section('content')
+    <a href="/book/playground">Booking playground (for testing)</a>
+
     @if ($bookings->isEmpty())
         <p>You have no active bookings.</p>
     @else
-        <ul>
-            @foreach ($bookings as $booking)
-                <li>
-                    {{ $booking->doctor_full_name }} — {{ $booking->date->format('Y-m-d') }}
-                    at {{ sprintf('%02d:%02d', intdiv($booking->start_time, 100), $booking->start_time % 100) }}
-                    ({{ $booking->confirmed ? 'Confirmed' : 'Unconfirmed' }})
-                </li>
-            @endforeach
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Doctor</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Time</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($bookings as $booking)
+                    <tr>
+                        <td>{{ $booking->doctor_full_name }}</td>
+                        <td>{{ $booking->date->format('Y-m-d') }}</td>
+                        <td>{{ sprintf('%02d:%02d', intdiv($booking->start_time, 100), $booking->start_time % 100) }}</td>
+                        <td>{{ $booking->confirmed ? 'Confirmed' : 'Unconfirmed' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     @endif
     <p><a href="{{ route('home') }}">Home</a></p>
 @endsection

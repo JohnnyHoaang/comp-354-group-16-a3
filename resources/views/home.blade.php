@@ -3,6 +3,21 @@
 @section('title', 'Home')
 
 @section('content')
+    @if ($reminders->isNotEmpty())
+        <wa-callout variant="warning">
+            <strong>Booking reminder</strong>
+            <p>You have bookings in less than 2 days:</p>
+            <ul>
+                @foreach ($reminders as $booking)
+                    <li>
+                        {{ $booking->doctor_full_name }} — {{ $booking->date->format('Y-m-d') }}
+                        at {{ sprintf('%02d:%02d', intdiv($booking->start_time, 100), $booking->start_time % 100) }}
+                        ({{ $booking->confirmed ? 'Confirmed' : 'Unconfirmed' }})
+                    </li>
+                @endforeach
+            </ul>
+        </wa-callout>
+    @endif
     <p>Email: {{ auth()->user()->email }}</p>
     <p>Role: {{ auth()->user()->role }}</p>
     <p><a href="{{ route('bookings.index') }}">My bookings</a></p>
