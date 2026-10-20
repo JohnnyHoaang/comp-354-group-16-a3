@@ -2,11 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'start_time' => ['required', 'date_format:H:i'],
+        ]);
+
+        $request->user()->bookings()->create([
+            'doctor_full_name' => 'Dr. Alex Smith',
+            'date' => $validated['date'],
+            'start_time' => (int) str_replace(':', '', $validated['start_time']),
+            'confirmed' => true,
+        ]);
+
+        return redirect()->route('bookings.index')->with('status', 'Your one-hour booking is confirmed.');
+    }
+
     public function create(Request $request): View
     {
         $date = null;

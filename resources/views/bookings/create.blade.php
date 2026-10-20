@@ -43,10 +43,17 @@
                 </tbody>
             </table>
         </div>
-        <p>
-            <label for="time">Time (24-hour)</label>
-            <input id="time" type="time" name="start_time" step="60" required>
-        </p>
+        <form method="POST" action="{{ route('bookings.store') }}">
+            @csrf
+            <input type="hidden" name="date" value="{{ $date }}">
+            <p>Doctor: Dr. Alex Smith (mock doctor)</p>
+            <p>Duration: 1 hour</p>
+            <p>
+                <label for="time">Start time (24-hour)</label>
+                <input id="time" type="time" name="start_time" value="{{ old('start_time') }}" step="60" required>
+            </p>
+            <wa-button type="submit" variant="brand">Confirm one-hour booking</wa-button>
+        </form>
         <script>
             document.querySelectorAll('[data-time]').forEach(button => {
                 button.addEventListener('click', () => {

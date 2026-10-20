@@ -27,6 +27,7 @@ class Booking extends Model
     {
         return [
             'start_time' => 'integer',
+            'duration_minutes' => 'integer',
             'date' => 'date',
             'confirmed' => 'boolean',
         ];
