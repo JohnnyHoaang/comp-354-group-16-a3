@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminBookingController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingPlaygroundController;
 use App\Http\Controllers\HomeController;
@@ -13,6 +14,8 @@ Route::post('/login', [LoginController::class, 'store'])
     ->middleware(['guest', 'throttle:5,1'])->name('login.store');
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 Route::view('/admin', 'admin')->middleware(['auth', 'admin'])->name('admin');
+Route::get('/admin/bookings', [AdminBookingController::class, 'index'])->middleware(['auth', 'admin'])->name('admin.bookings');
+Route::delete('/admin/users/{user}/bookings/{booking}', [AdminBookingController::class, 'destroy'])->middleware(['auth', 'admin'])->name('admin.bookings.destroy');
 Route::get('/book/list', [BookingController::class, 'index'])->middleware('auth')->name('bookings.index');
 Route::view('/book/playground', 'bookings.playground')->middleware('auth')->name('bookings.playground');
 Route::post('/book/playground/add', [BookingPlaygroundController::class, 'store'])->middleware('auth')->name('bookings.playground.add');
