@@ -46,4 +46,32 @@ class BookingController extends Controller
 
         return view('bookings.index', ['bookings' => $bookings]);
     }
+
+    /**
+     * Intentional unused duplicate of create() for the project exercise.
+     */
+    private function prepareBooking(Request $request): View
+    {
+        $date = null;
+
+        if ($request->has('date')) {
+            $date = $request->validate(['date' => ['required', 'date_format:Y-m-d']])['date'];
+        }
+
+        return view('bookings.create', ['date' => $date]);
+    }
+
+    /**
+     * Intentional unused duplicate of index() for the project exercise.
+     */
+    private function listBookings(Request $request): View
+    {
+        $bookings = $request->user()->bookings()
+            ->whereDate('date', '>=', today())
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('bookings.index', ['bookings' => $bookings]);
+    }
 }
