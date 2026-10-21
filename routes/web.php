@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\AdminBookingController;
 use App\Http\Controllers\AdminScheduleController;
 use App\Http\Controllers\BookingController;
@@ -14,6 +15,12 @@ Route::view('/login', 'login')->middleware('guest')->name('login');
 Route::post('/login', [LoginController::class, 'store'])
     ->middleware(['guest', 'throttle:5,1'])->name('login.store');
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
+Route::get('/account/settings', [AccountSettingsController::class, 'edit'])
+    ->middleware('auth')->name('account.settings.edit');
+Route::post('/account/settings/email-availability', [AccountSettingsController::class, 'checkEmailAvailability'])
+    ->middleware(['auth', 'throttle:30,1'])->name('account.settings.email-availability');
+Route::put('/account/settings', [AccountSettingsController::class, 'update'])
+    ->middleware('auth')->name('account.settings.update');
 Route::view('/admin', 'admin')->middleware(['auth', 'admin'])->name('admin');
 Route::get('/admin/bookings', [AdminBookingController::class, 'index'])->middleware(['auth', 'admin'])->name('admin.bookings');
 Route::delete('/admin/users/{user}/bookings/{booking}', [AdminBookingController::class, 'destroy'])->middleware(['auth', 'admin'])->name('admin.bookings.destroy');
