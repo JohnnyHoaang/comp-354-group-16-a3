@@ -12,6 +12,7 @@
         h1 { margin: .5rem 0 1.5rem; font-size: 1.5rem; }
         .brand { margin: 0; color: #526075; font-weight: 600; }
         wa-input { display: block; margin-bottom: 1rem; }
+        .help-text { color: #526075; }
         .error { color: #a51d2d; }
     </style>
 </head>

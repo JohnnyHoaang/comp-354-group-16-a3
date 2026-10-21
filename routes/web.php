@@ -16,6 +16,8 @@ Route::post('/login', [LoginController::class, 'store'])
 Route::get('/home', [HomeController::class, 'index'])->middleware('auth')->name('home');
 Route::get('/account/settings', [AccountSettingsController::class, 'edit'])
     ->middleware('auth')->name('account.settings.edit');
+Route::post('/account/settings/email-availability', [AccountSettingsController::class, 'checkEmailAvailability'])
+    ->middleware(['auth', 'throttle:30,1'])->name('account.settings.email-availability');
 Route::put('/account/settings', [AccountSettingsController::class, 'update'])
     ->middleware('auth')->name('account.settings.update');
 Route::view('/admin', 'admin')->middleware(['auth', 'admin'])->name('admin');

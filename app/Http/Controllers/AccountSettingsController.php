@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,6 +15,23 @@ class AccountSettingsController extends Controller
     public function edit(Request $request): View
     {
         return view('account.settings', ['user' => $request->user()]);
+    }
+
+    public function checkEmailAvailability(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email', 'max:255'],
+        ]);
+
+        $email = Str::lower(trim($validated['email']));
+        $user = $request->user();
+        $isCurrentEmail = $email === Str::lower($user->email);
+        $isAvailable = $isCurrentEmail || ! User::query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->whereKeyNot($user->getKey())
+            ->exists();
+
+        return response()->json(['available' => $isAvailable]);
     }
 
     public function update(Request $request): RedirectResponse

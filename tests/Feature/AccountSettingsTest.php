@@ -15,6 +15,7 @@ class AccountSettingsTest extends TestCase
     public function test_guests_are_redirected_from_account_settings(): void
     {
         $this->get(route('account.settings.edit'))->assertRedirect('/login');
+        $this->post(route('account.settings.email-availability'))->assertRedirect('/login');
         $this->put(route('account.settings.update'))->assertRedirect('/login');
     }
 
@@ -28,7 +29,39 @@ class AccountSettingsTest extends TestCase
         $this->actingAs($user)->get(route('account.settings.edit'))
             ->assertOk()
             ->assertSee('value="patient@example.net"', false)
-            ->assertSee('value="+15145550123"', false);
+            ->assertSee('value="+15145550123"', false)
+            ->assertSee('id="phone-help" class="help-text" hidden', false)
+            ->assertSee('wa-button type="submit" variant="brand" disabled', false)
+            ->assertSeeText('Use a US or Canadian 10-digit number. The area code and exchange must each start with 2-9. You may include +1 and formatting, for example (514) 223-2345.');
+    }
+
+    public function test_email_availability_check_accepts_the_current_email(): void
+    {
+        $user = User::factory()->create(['email' => 'Patient@Example.net']);
+
+        $this->actingAs($user)
+            ->postJson(route('account.settings.email-availability'), ['email' => 'patient@example.NET'])
+            ->assertOk()
+            ->assertExactJson(['available' => true]);
+    }
+
+    public function test_email_availability_check_rejects_another_users_email_case_insensitively(): void
+    {
+        $user = User::factory()->create();
+        User::factory()->create(['email' => 'taken@example.org']);
+
+        $this->actingAs($user)
+            ->postJson(route('account.settings.email-availability'), ['email' => 'TAKEN@example.ORG'])
+            ->assertOk()
+            ->assertExactJson(['available' => false]);
+    }
+
+    public function test_email_availability_check_rejects_invalid_email_format(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('account.settings.email-availability'), ['email' => 'not-an-email'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('email');
     }
 
     public function test_successful_updates_normalize_contact_information_without_sending_email(): void
