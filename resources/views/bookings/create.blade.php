@@ -32,7 +32,7 @@
                     <thead>
                         <tr>
                             @foreach ($slots as $slot)
-                                <th scope="col">{{ $slot['label'] }}</th>
+                                <th scope="col" style="white-space: nowrap;">{{ $slot['label'] }}</th>
                             @endforeach
                         </tr>
                     </thead>
@@ -45,7 +45,8 @@
                                             data-time="{{ $slot['label'] }}"
                                             aria-label="Select {{ $slot['label'] }} — available">Available</wa-button>
                                     @else
-                                        <span aria-label="{{ $slot['label'] }} — already booked">Booked</span>
+                                        <wa-button type="button" variant="neutral" size="s" disabled
+                                            aria-label="{{ $slot['label'] }} — already booked">Booked</wa-button>
                                     @endif
                                 </td>
                             @endforeach
