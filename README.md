@@ -1,3 +1,10 @@
+# MediLink
+
+A clinic appointment booking app: patients search a date for free one-hour slots and
+book one; admins manage opening hours and cancel bookings.
+
+See **[DOCUMENTATION.md](DOCUMENTATION.md)** for the full route list, the availability
+rules, the data model
 
 ## Setup
 

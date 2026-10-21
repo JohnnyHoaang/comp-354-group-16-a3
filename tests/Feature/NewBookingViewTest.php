@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Booking;
+use App\Models\ClinicSchedule;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -22,19 +22,13 @@ class NewBookingViewTest extends TestCase
             ->assertSeeText('1. Choose a date')->assertDontSeeText('2. Choose a time');
     }
 
-    public function test_selected_date_shows_all_hours_even_when_booked(): void
+    public function test_selected_date_shows_the_clinics_opening_hours(): void
     {
-        $user = User::factory()->create();
-        Booking::factory()->for($user)->create(['date' => '2026-11-01', 'start_time' => 1200]);
-        Booking::factory()->create(['date' => '2026-11-01', 'start_time' => 1300]);
+        ClinicSchedule::factory()->forDate('2026-11-02')->create(['opens_at' => 900, 'closes_at' => 1700]);
 
-        $response = $this->actingAs($user)->get('/book/new?date=2026-11-01')->assertOk()
-            ->assertSeeText('2. Choose a time')->assertSeeText('Available all day.');
-
-        for ($hour = 0; $hour < 24; $hour++) {
-            $response->assertSee('data-time="'.sprintf('%02d:00', $hour).'"', false);
-        }
-        $this->assertDatabaseCount('bookings', 2);
+        $this->actingAs(User::factory()->create())->get('/book/new?date=2026-11-02')->assertOk()
+            ->assertSeeText('2. Choose a time')
+            ->assertSeeText('Availability for 2026-11-02 — 09:00–17:00');
     }
 
     public function test_invalid_dates_are_rejected(): void
