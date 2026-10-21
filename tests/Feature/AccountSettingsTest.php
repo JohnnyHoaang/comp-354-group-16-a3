@@ -1,0 +1,247 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use PHPUnit\Framework\Attributes\TestWith;
+use Tests\TestCase;
+
+class AccountSettingsTest extends TestCase
+{
+    use LazilyRefreshDatabase;
+
+    public function test_guests_are_redirected_from_account_settings(): void
+    {
+        $this->get(route('account.settings.edit'))->assertRedirect('/login');
+        $this->put(route('account.settings.update'))->assertRedirect('/login');
+    }
+
+    public function test_authenticated_users_can_view_their_contact_information(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+15145550123',
+        ]);
+
+        $this->actingAs($user)->get(route('account.settings.edit'))
+            ->assertOk()
+            ->assertSee('value="patient@example.net"', false)
+            ->assertSee('value="+15145550123"', false);
+    }
+
+    public function test_successful_updates_normalize_contact_information_without_sending_email(): void
+    {
+        Mail::fake();
+
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+
+        $this->actingAs($user)->put(route('account.settings.update'), [
+            'email' => 'New.Patient@Example.ORG',
+            'phone' => '+1 (514) 555-0123',
+        ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHas('status', 'Your contact information was updated.');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'new.patient@example.org',
+            'phone' => '+15145550123',
+        ]);
+
+        $this->get(route('account.settings.edit'))
+            ->assertOk()
+            ->assertSee('value="new.patient@example.org"', false)
+            ->assertSee('value="+15145550123"', false);
+
+        $this->actingAs($user->fresh())->get(route('home'))
+            ->assertOk()
+            ->assertSeeText('Email: new.patient@example.org')
+            ->assertSeeText('Phone: +15145550123')
+            ->assertSee(route('account.settings.edit'));
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_invalid_email_is_rejected_without_saving_contact_changes(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+
+        $this->actingAs($user)->from(route('account.settings.edit'))
+            ->put(route('account.settings.update'), [
+                'email' => 'not-an-email',
+                'phone' => '514-555-0123',
+            ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasErrors(['email' => 'The email field must be a valid email address.']);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+    }
+
+    public function test_unchanged_email_is_rejected_case_insensitively(): void
+    {
+        $user = User::factory()->create(['email' => 'Patient@Example.net']);
+
+        $this->actingAs($user)->from(route('account.settings.edit'))
+            ->put(route('account.settings.update'), [
+                'email' => 'patient@example.NET',
+                'phone' => '514-555-0123',
+            ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasErrors(['email' => 'The new email address is the same as the current one.']);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'Patient@Example.net',
+            'phone' => null,
+        ]);
+    }
+
+    public function test_email_in_use_by_another_user_is_rejected_case_insensitively(): void
+    {
+        $user = User::factory()->create(['email' => 'patient@example.net']);
+        User::factory()->create(['email' => 'other@example.org']);
+
+        $this->actingAs($user)->from(route('account.settings.edit'))
+            ->put(route('account.settings.update'), [
+                'email' => 'OTHER@EXAMPLE.ORG',
+                'phone' => '514-555-0123',
+            ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasErrors(['email' => 'This email address is already in use.']);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'patient@example.net',
+            'phone' => null,
+        ]);
+    }
+
+    #[TestWith(['114-555-0123'])]
+    #[TestWith(['514-155-0123'])]
+    #[TestWith(['514-555-012'])]
+    public function test_invalid_north_american_phone_numbers_are_rejected(string $phone): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+
+        $this->actingAs($user)->from(route('account.settings.edit'))
+            ->put(route('account.settings.update'), [
+                'email' => 'new@example.org',
+                'phone' => $phone,
+            ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasErrors(['phone' => 'Enter a valid US or Canadian phone number.']);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+    }
+
+    public function test_unchanged_phone_is_rejected_after_normalization(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+15145550123',
+        ]);
+
+        $this->actingAs($user)->from(route('account.settings.edit'))
+            ->put(route('account.settings.update'), [
+                'email' => 'new@example.org',
+                'phone' => '(514) 555-0123',
+            ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasErrors(['phone' => 'The new phone number is the same as the current one.']);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'patient@example.net',
+            'phone' => '+15145550123',
+        ]);
+    }
+
+    public function test_different_users_can_use_the_same_phone_number(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+        $otherUser = User::factory()->create([
+            'email' => 'other@example.net',
+            'phone' => null,
+        ]);
+
+        $this->actingAs($otherUser)->put(route('account.settings.update'), [
+            'email' => 'other.updated@example.net',
+            'phone' => '514-555-0123',
+        ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'phone' => '+14165550123',
+        ]);
+        $this->assertDatabaseHas('users', [
+            'id' => $otherUser->id,
+            'phone' => '+15145550123',
+        ]);
+    }
+
+    public function test_submitted_user_id_cannot_change_another_users_contact_information(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+        $otherUser = User::factory()->create([
+            'email' => 'other@example.net',
+            'phone' => '+16135550123',
+        ]);
+
+        $this->actingAs($user)->put(route('account.settings.update'), [
+            'user_id' => $otherUser->id,
+            'email' => 'patient.updated@example.net',
+            'phone' => '514-555-0123',
+        ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'patient.updated@example.net',
+            'phone' => '+15145550123',
+        ]);
+        $this->assertDatabaseHas('users', [
+            'id' => $otherUser->id,
+            'email' => 'other@example.net',
+            'phone' => '+16135550123',
+        ]);
+    }
+
+    public function test_email_and_phone_are_required(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+
+        $this->actingAs($user)->from(route('account.settings.edit'))
+            ->put(route('account.settings.update'), [])
+            ->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHasErrors(['email', 'phone']);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'patient@example.net',
+            'phone' => '+14165550123',
+        ]);
+    }
+}
