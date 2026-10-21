@@ -66,6 +66,46 @@ class AccountSettingsTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function test_phone_can_be_updated_while_unchanged_email_is_preserved(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'Patient@Example.net',
+            'phone' => '+14165550123',
+        ]);
+
+        $this->actingAs($user)->put(route('account.settings.update'), [
+            'email' => 'patient@example.NET',
+            'phone' => '(514) 555-0123',
+        ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHas('status', 'Your contact information was updated.');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'Patient@Example.net',
+            'phone' => '+15145550123',
+        ]);
+    }
+
+    public function test_email_can_be_updated_while_unchanged_phone_is_preserved(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'patient@example.net',
+            'phone' => '+15145550123',
+        ]);
+
+        $this->actingAs($user)->put(route('account.settings.update'), [
+            'email' => 'updated@example.org',
+            'phone' => '514 555 0123',
+        ])->assertRedirect(route('account.settings.edit'))
+            ->assertSessionHas('status', 'Your contact information was updated.');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'email' => 'updated@example.org',
+            'phone' => '+15145550123',
+        ]);
+    }
+
     public function test_invalid_email_is_rejected_without_saving_contact_changes(): void
     {
         $user = User::factory()->create([
@@ -87,21 +127,24 @@ class AccountSettingsTest extends TestCase
         ]);
     }
 
-    public function test_unchanged_email_is_rejected_case_insensitively(): void
+    public function test_update_is_rejected_when_both_contact_details_are_unchanged(): void
     {
-        $user = User::factory()->create(['email' => 'Patient@Example.net']);
+        $user = User::factory()->create([
+            'email' => 'Patient@Example.net',
+            'phone' => '+15145550123',
+        ]);
 
         $this->actingAs($user)->from(route('account.settings.edit'))
             ->put(route('account.settings.update'), [
                 'email' => 'patient@example.NET',
-                'phone' => '514-555-0123',
+                'phone' => '(514) 555-0123',
             ])->assertRedirect(route('account.settings.edit'))
-            ->assertSessionHasErrors(['email' => 'The new email address is the same as the current one.']);
+            ->assertSessionHasErrors(['email' => 'No changes detected. Update your email address or phone number.']);
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
             'email' => 'Patient@Example.net',
-            'phone' => null,
+            'phone' => '+15145550123',
         ]);
     }
 
@@ -145,27 +188,6 @@ class AccountSettingsTest extends TestCase
             'id' => $user->id,
             'email' => 'patient@example.net',
             'phone' => '+14165550123',
-        ]);
-    }
-
-    public function test_unchanged_phone_is_rejected_after_normalization(): void
-    {
-        $user = User::factory()->create([
-            'email' => 'patient@example.net',
-            'phone' => '+15145550123',
-        ]);
-
-        $this->actingAs($user)->from(route('account.settings.edit'))
-            ->put(route('account.settings.update'), [
-                'email' => 'new@example.org',
-                'phone' => '(514) 555-0123',
-            ])->assertRedirect(route('account.settings.edit'))
-            ->assertSessionHasErrors(['phone' => 'The new phone number is the same as the current one.']);
-
-        $this->assertDatabaseHas('users', [
-            'id' => $user->id,
-            'email' => 'patient@example.net',
-            'phone' => '+15145550123',
         ]);
     }
 
