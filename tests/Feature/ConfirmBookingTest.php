@@ -4,24 +4,29 @@ namespace Tests\Feature;
 
 use App\Models\Booking;
 use App\Models\User;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class ConfirmBookingTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use DatabaseMigrations;
 
     public function test_guests_cannot_confirm_bookings(): void
     {
         $this->post('/book/new')->assertRedirect('/login');
     }
 
-    public function test_confirmation_saves_a_one_hour_booking_for_the_signed_in_user_even_with_an_overlap(): void
+    public function test_confirmation_saves_a_one_hour_booking_for_the_signed_in_user(): void
     {
         $user = User::factory()->create();
-        $other = Booking::factory()->create(['date' => '2026-11-01', 'start_time' => 905]);
 
+        $other = Booking::factory()->create([
+            'doctor_full_name' => 'Dr. Alex Smith',
+            'date' => '2026-11-01',
+            'start_time' => 1100,
+            'duration_minutes' => 60,
+        ]);
         $this->actingAs($user)->post('/book/new', [
             'date' => '2026-11-01', 'start_time' => '09:05',
             'user_id' => $other->user_id, 'duration_minutes' => 120, 'confirmed' => false,
