@@ -4,10 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\ClinicSchedule;
+use App\Services\BookingReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookingController extends Controller
@@ -19,32 +18,15 @@ class BookingController extends Controller
             'start_time' => ['required', 'date_format:H:i'],
         ]);
 
-        $startTime = (int) str_replace(':', '', $validated['start_time']);
+        app(BookingReservationService::class)->reserve(
+            $request->user(),
+            $validated['date'],
+            $validated['start_time']
+        );
 
-        DB::transaction(function () use ($request, $validated, $startTime): void {
-            $schedule = ClinicSchedule::forDate($validated['date']);
-
-            if (! $schedule?->offersSlot($startTime)) {
-                throw ValidationException::withMessages([
-                    'start_time' => 'The clinic does not offer that time slot on the selected date.',
-                ]);
-            }
-
-            if (! $schedule->isSlotFreeOn($validated['date'], $startTime)) {
-                throw ValidationException::withMessages([
-                    'start_time' => 'That time slot is no longer available. Please choose another time.',
-                ]);
-            }
-
-            $request->user()->bookings()->create([
-                'doctor_full_name' => Booking::DOCTOR_FULL_NAME,
-                'date' => $validated['date'],
-                'start_time' => $startTime,
-                'confirmed' => true,
-            ]);
-        });
-
-        return redirect()->route('bookings.index')->with('status', 'Your one-hour booking is confirmed.');
+        return redirect()
+            ->route('bookings.index')
+            ->with('status', 'Your one-hour booking is confirmed.');
     }
 
     public function create(Request $request): View

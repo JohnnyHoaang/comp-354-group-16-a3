@@ -5,13 +5,13 @@ namespace Tests\Feature;
 use App\Models\Booking;
 use App\Models\ClinicSchedule;
 use App\Models\User;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class ConfirmBookingTest extends TestCase
 {
-    use LazilyRefreshDatabase;
+    use DatabaseMigrations;
 
     private const DATE = '2026-11-02';
 
@@ -36,11 +36,17 @@ class ConfirmBookingTest extends TestCase
     {
         $this->openClinic();
         $user = User::factory()->create();
-        $other = User::factory()->create();
+        $otherUser = User::factory()->create();
 
+        $existingBooking = Booking::factory()->create([
+            'doctor_full_name' => 'Dr. Alex Smith',
+            'date' => '2026-11-01',
+            'start_time' => 1100,
+            'duration_minutes' => 60,
+        ]);
         $this->actingAs($user)->post('/book/new', [
             'date' => self::DATE, 'start_time' => '09:00',
-            'user_id' => $other->id, 'duration_minutes' => 120, 'confirmed' => false,
+            'user_id' => $otherUser->id, 'duration_minutes' => 120, 'confirmed' => false,
         ])->assertRedirect(route('bookings.index'))
             ->assertSessionHas('status', 'Your one-hour booking is confirmed.');
 
@@ -50,7 +56,8 @@ class ConfirmBookingTest extends TestCase
         $this->assertTrue($booking->confirmed);
         $this->assertSame(self::DATE, $booking->date->format('Y-m-d'));
         $this->assertSame(Booking::DOCTOR_FULL_NAME, $booking->doctor_full_name);
-        $this->assertSame(0, $other->bookings()->count());
+        $this->assertSame(0, $otherUser->bookings()->count());
+        $this->assertModelExists($existingBooking);
     }
 
     public function test_a_slot_taken_since_the_search_is_rejected(): void
