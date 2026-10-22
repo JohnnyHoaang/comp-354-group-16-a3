@@ -5,6 +5,7 @@ use App\Models\Booking;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Models\ClinicSchedule;
 
 class BookingReservationService
 {
@@ -24,6 +25,23 @@ class BookingReservationService
         $pdo->exec('BEGIN IMMEDIATE');
 
         try {
+
+                $startTime = $hour * 100 + $minute;
+
+                $schedule = ClinicSchedule::forDate($date);
+
+                if (! $schedule?->offersSlot($startTime)) {
+                    throw ValidationException::withMessages([
+                    'start_time' => 'The clinic does not offer that time slot on the selected date.',
+                ]);
+            }
+
+            if (! $schedule->isSlotFreeOn($date, $startTime)) {
+                throw ValidationException::withMessages([
+        'start_time' => 'That time slot is no longer available. Please choose another time.',
+            ]);
+                }
+
             $existingBookings = Booking::query()
                 ->where('doctor_full_name', 'Dr. Alex Smith')
                 ->whereDate('date', $date)

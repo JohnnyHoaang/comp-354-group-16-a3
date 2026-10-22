@@ -40,6 +40,26 @@ class ConcurrentBookingTest extends TestCase
                 )
             ");
 
+$pdo->exec("
+    CREATE TABLE clinic_schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        weekday INTEGER NOT NULL UNIQUE,
+        opens_at INTEGER NOT NULL,
+        closes_at INTEGER NOT NULL,
+        is_closed INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT,
+        updated_at TEXT
+    )
+");
+
+$pdo->exec("
+    INSERT INTO clinic_schedules
+        (weekday, opens_at, closes_at, is_closed)
+    VALUES
+        (0, 900, 1200, 0)
+");
+
+
             $pdo->exec("
                 INSERT INTO users (id, name, email, password)
                 VALUES

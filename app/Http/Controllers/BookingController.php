@@ -1,12 +1,15 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Models\Booking;
+use App\Models\ClinicSchedule;
 use App\Services\BookingReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
-use App\Models\Booking;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class BookingController extends Controller
 {
@@ -33,12 +36,26 @@ public function store(Request $request): RedirectResponse
     public function create(Request $request): View
     {
         $date = null;
+        $openingHours = null;
+        $slots = [];
 
         if ($request->has('date')) {
             $date = $request->validate(['date' => ['required', 'date_format:Y-m-d']])['date'];
+            $schedule = ClinicSchedule::forDate($date);
+
+            if ($schedule?->isOpen()) {
+                $openingHours = $schedule->openingHours();
+                $slots = $schedule->availabilityOn($date);
+            }
         }
 
-        return view('bookings.create', ['date' => $date]);
+        return view('bookings.create', [
+            'date' => $date,
+            'openingHours' => $openingHours,
+            'slots' => $slots,
+            'hasAvailableSlot' => collect($slots)->contains('is_available', true),
+            'doctorFullName' => Booking::DOCTOR_FULL_NAME,
+        ]);
     }
 
     public function index(Request $request): View
@@ -50,20 +67,6 @@ public function store(Request $request): RedirectResponse
             ->get();
 
         return view('bookings.index', ['bookings' => $bookings]);
-    }
-
-    /**
-     * Intentional unused duplicate of create() for the project exercise.
-     */
-    private function prepareBooking(Request $request): View
-    {
-        $date = null;
-
-        if ($request->has('date')) {
-            $date = $request->validate(['date' => ['required', 'date_format:Y-m-d']])['date'];
-        }
-
-        return view('bookings.create', ['date' => $date]);
     }
 
     /**

@@ -30,7 +30,7 @@ try {
     app(BookingReservationService::class)->reserve(
         $user,
         '2026-11-01',
-        '09:30'
+        '09:00'
     );
 
     echo "SUCCESS\n";

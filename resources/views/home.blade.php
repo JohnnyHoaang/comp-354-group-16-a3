@@ -19,7 +19,9 @@
         </wa-callout>
     @endif
     <p>Email: {{ auth()->user()->email }}</p>
+    <p>Phone: {{ auth()->user()->phone ?? 'Not provided' }}</p>
     <p>Role: {{ auth()->user()->role }}</p>
+    <p><a href="{{ route('account.settings.edit') }}">Account settings</a></p>
     <p><a href="{{ route('bookings.index') }}">My bookings</a></p>
     @if (auth()->user()->role === 'admin')
         <p><a href="{{ route('admin') }}">Admin</a></p>

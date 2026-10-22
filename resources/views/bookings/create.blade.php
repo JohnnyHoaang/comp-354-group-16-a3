@@ -17,52 +17,66 @@
 
     @if ($date)
         <h2>2. Choose a time</h2>
-        <p>Availability for {{ $date }} — 00:00–24:00</p>
-        <p>Available all day. Select an hour below or enter a time.</p>
-        {{-- Intentional playground bug: existing bookings do not affect availability. --}}
-        <div style="overflow-x: auto;" tabindex="0" role="region" aria-label="Daily availability chart">
-            <table>
-                <caption>Hourly availability</caption>
-                <thead>
-                    <tr>
-                        @for ($hour = 0; $hour < 24; $hour++)
-                            <th scope="col">{{ sprintf('%02d:00', $hour) }}</th>
-                        @endfor
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        @for ($hour = 0; $hour < 24; $hour++)
-                            <td>
-                                <wa-button type="button" variant="success" size="s"
-                                    data-time="{{ sprintf('%02d:00', $hour) }}"
-                                    aria-label="Select {{ sprintf('%02d:00', $hour) }} — available">Available</wa-button>
-                            </td>
-                        @endfor
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <form method="POST" action="{{ route('bookings.store') }}">
-            @csrf
-            <input type="hidden" name="date" value="{{ $date }}">
-            <p>Doctor: Dr. Alex Smith (mock doctor)</p>
-            <p>Duration: 1 hour</p>
-            <p>
-                <label for="time">Start time (24-hour)</label>
-                <input id="time" type="time" name="start_time" value="{{ old('start_time') }}" step="60" required>
-            </p>
-            <wa-button type="submit" variant="brand">Confirm one-hour booking</wa-button>
-        </form>
-        <script>
-            document.querySelectorAll('[data-time]').forEach(button => {
-                button.addEventListener('click', () => {
-                    const input = document.getElementById('time');
-                    input.value = button.dataset.time;
-                    input.focus();
-                });
-            });
-        </script>
+        @if ($openingHours === null)
+            <p>The clinic is closed on {{ $date }}.</p>
+        @else
+            <p>Availability for {{ $date }} — {{ $openingHours }}</p>
+            @if ($hasAvailableSlot)
+                <p>Select an available hour below or enter a time.</p>
+            @else
+                <p>No times are still available on {{ $date }}.</p>
+            @endif
+            <div style="overflow-x: auto;" tabindex="0" role="region" aria-label="Daily availability chart">
+                <table>
+                    <caption>Hourly availability</caption>
+                    <thead>
+                        <tr>
+                            @foreach ($slots as $slot)
+                                <th scope="col" style="white-space: nowrap;">{{ $slot['label'] }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            @foreach ($slots as $slot)
+                                <td>
+                                    @if ($slot['is_available'])
+                                        <wa-button type="button" variant="success" size="s"
+                                            data-time="{{ $slot['label'] }}"
+                                            aria-label="Select {{ $slot['label'] }} — available">Available</wa-button>
+                                    @else
+                                        <wa-button type="button" variant="neutral" size="s" disabled
+                                            aria-label="{{ $slot['label'] }} — already booked">Booked</wa-button>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            @if ($hasAvailableSlot)
+                <form method="POST" action="{{ route('bookings.store') }}">
+                    @csrf
+                    <input type="hidden" name="date" value="{{ $date }}">
+                    <p>Doctor: {{ $doctorFullName }} (mock doctor)</p>
+                    <p>Duration: 1 hour</p>
+                    <p>
+                        <label for="time">Start time (24-hour)</label>
+                        <input id="time" type="time" name="start_time" value="{{ old('start_time') }}" step="60" required>
+                    </p>
+                    <wa-button type="submit" variant="brand">Confirm one-hour booking</wa-button>
+                </form>
+                <script>
+                    document.querySelectorAll('[data-time]').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const input = document.getElementById('time');
+                            input.value = button.dataset.time;
+                            input.focus();
+                        });
+                    });
+                </script>
+            @endif
+        @endif
     @endif
     <p><a href="{{ route('bookings.index') }}">My bookings</a></p>
 @endsection
