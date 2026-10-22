@@ -28,9 +28,7 @@ class PreventDoubleBookingTest extends TestCase
             'date' => '2026-11-01',
             'start_time' => '09:30',
         ]);
-         $this->assertDatabaseCount('bookings', 1);
-         $response->assertSessionHasErrors('start_time');
+        $this->assertDatabaseCount('bookings', 1);
+        $response->assertSessionHasErrors('start_time');
     }
-       
 }
-

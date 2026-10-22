@@ -1,21 +1,22 @@
 <?php
 
-require __DIR__ . '/../../vendor/autoload.php';
-
-$app = require __DIR__ . '/../../bootstrap/app.php';
-
-$app->make(
-    Illuminate\Contracts\Console\Kernel::class
-)->bootstrap();
-
 use App\Models\User;
 use App\Services\BookingReservationService;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+
+require __DIR__.'/../../vendor/autoload.php';
+
+$app = require __DIR__.'/../../bootstrap/app.php';
+
+$app->make(Kernel::class)->bootstrap();
+
 config()->set('database.default', 'sqlite');
 config()->set('database.connections.sqlite.database', $argv[1]);
 
 DB::purge('sqlite');
+DB::setDefaultConnection('sqlite');
 
 $userId = (int) $argv[2];
 $startAt = (float) $argv[3];
@@ -37,6 +38,6 @@ try {
 } catch (ValidationException $e) {
     echo "CONFLICT\n";
 } catch (Throwable $e) {
-    fwrite(STDERR, $e->getMessage() . "\n");
+    fwrite(STDERR, $e->getMessage()."\n");
     exit(1);
 }

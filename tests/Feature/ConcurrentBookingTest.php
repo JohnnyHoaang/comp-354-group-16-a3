@@ -14,19 +14,19 @@ class ConcurrentBookingTest extends TestCase
         $database = tempnam(sys_get_temp_dir(), 'medilink_');
 
         try {
-            $pdo = new PDO('sqlite:' . $database);
+            $pdo = new PDO('sqlite:'.$database);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $pdo->exec("
+            $pdo->exec('
                 CREATE TABLE users (
                     id INTEGER PRIMARY KEY,
                     name TEXT,
                     email TEXT,
                     password TEXT
                 )
-            ");
+            ');
 
-            $pdo->exec("
+            $pdo->exec('
                 CREATE TABLE bookings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
@@ -38,9 +38,9 @@ class ConcurrentBookingTest extends TestCase
                     created_at TEXT,
                     updated_at TEXT
                 )
-            ");
+            ');
 
-$pdo->exec("
+            $pdo->exec('
     CREATE TABLE clinic_schedules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         weekday INTEGER NOT NULL UNIQUE,
@@ -50,15 +50,14 @@ $pdo->exec("
         created_at TEXT,
         updated_at TEXT
     )
-");
+');
 
-$pdo->exec("
+            $pdo->exec('
     INSERT INTO clinic_schedules
         (weekday, opens_at, closes_at, is_closed)
     VALUES
         (0, 900, 1200, 0)
-");
-
+');
 
             $pdo->exec("
                 INSERT INTO users (id, name, email, password)
@@ -73,11 +72,11 @@ $pdo->exec("
             $worker = base_path('tests/Support/booking_worker.php');
 
             $process1 = new Process([
-                PHP_BINARY, $worker, $database, '1', $startAt
+                PHP_BINARY, $worker, $database, '1', $startAt,
             ]);
 
             $process2 = new Process([
-                PHP_BINARY, $worker, $database, '2', $startAt
+                PHP_BINARY, $worker, $database, '2', $startAt,
             ]);
 
             $process1->setTimeout(15);

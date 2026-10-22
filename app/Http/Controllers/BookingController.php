@@ -7,31 +7,27 @@ use App\Models\ClinicSchedule;
 use App\Services\BookingReservationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
-    
-public function store(Request $request): RedirectResponse
-{
-    $validated = $request->validate([
-        'date' => ['required', 'date_format:Y-m-d'],
-        'start_time' => ['required', 'date_format:H:i'],
-    ]);
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'start_time' => ['required', 'date_format:H:i'],
+        ]);
 
-    app(BookingReservationService::class)->reserve(
-        $request->user(),
-        $validated['date'],
-        $validated['start_time']
-    );
+        app(BookingReservationService::class)->reserve(
+            $request->user(),
+            $validated['date'],
+            $validated['start_time']
+        );
 
-    return redirect()
-        ->route('bookings.index')
-        ->with('status', 'Your one-hour booking is confirmed.');
-}
-
+        return redirect()
+            ->route('bookings.index')
+            ->with('status', 'Your one-hour booking is confirmed.');
+    }
 
     public function create(Request $request): View
     {
