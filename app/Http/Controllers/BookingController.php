@@ -64,18 +64,4 @@ class BookingController extends Controller
 
         return view('bookings.index', ['bookings' => $bookings]);
     }
-
-    /**
-     * Intentional unused duplicate of index() for the project exercise.
-     */
-    private function listBookings(Request $request): View
-    {
-        $bookings = $request->user()->bookings()
-            ->whereDate('date', '>=', today())
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
-
-        return view('bookings.index', ['bookings' => $bookings]);
-    }
 }
