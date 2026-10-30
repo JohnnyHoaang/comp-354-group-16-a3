@@ -31,25 +31,49 @@ class BookingController extends Controller
 
     public function create(Request $request): View
     {
-        $date = null;
-        $openingHours = null;
-        $slots = [];
+        $filters = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'clinic' => ['nullable', 'string', 'max:100'],
+            'appointment_type' => ['nullable', 'string', 'max:100'],
+        ]);
 
-        if ($request->has('date')) {
-            $date = $request->validate(['date' => ['required', 'date_format:Y-m-d']])['date'];
-            $schedule = ClinicSchedule::forDate($date);
+        $date = $filters['date'] ?? null;
+        $clinic = $filters['clinic'] ?? null;
+        $appointmentType = $filters['appointment_type'] ?? null;
+        $clinics = ['current' => 'Current clinic'];
+        $appointmentTypes = ['one-hour' => 'One-hour appointment'];
+        $days = [];
 
-            if ($schedule?->isOpen()) {
-                $openingHours = $schedule->openingHours();
-                $slots = $schedule->availabilityOn($date);
+        if (($clinic === null || isset($clinics[$clinic]))
+            && ($appointmentType === null || isset($appointmentTypes[$appointmentType]))) {
+            $dates = $date ? [$date] : array_map(
+                fn (int $offset): string => today()->addDays($offset)->toDateString(),
+                range(0, 6)
+            );
+
+            foreach ($dates as $dayDate) {
+                $schedule = ClinicSchedule::forDate($dayDate);
+                $openingHours = $schedule?->isOpen() ? $schedule->openingHours() : null;
+                $slots = $openingHours === null ? [] : $schedule->availabilityOn($dayDate);
+
+                if ($date !== null || $openingHours !== null) {
+                    $days[] = [
+                        'date' => $dayDate,
+                        'openingHours' => $openingHours,
+                        'slots' => $slots,
+                        'hasAvailableSlot' => collect($slots)->contains('is_available', true),
+                    ];
+                }
             }
         }
 
         return view('bookings.create', [
             'date' => $date,
-            'openingHours' => $openingHours,
-            'slots' => $slots,
-            'hasAvailableSlot' => collect($slots)->contains('is_available', true),
+            'clinic' => $clinic,
+            'appointmentType' => $appointmentType,
+            'clinics' => $clinics,
+            'appointmentTypes' => $appointmentTypes,
+            'days' => $days,
             'doctorFullName' => Booking::DOCTOR_FULL_NAME,
         ]);
     }
